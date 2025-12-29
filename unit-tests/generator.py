@@ -17,7 +17,7 @@ PROMPT_FILE = Path('/app/prompt.txt')
 
 
 # ============== Auxiliar Functions ==============
-def query_ollama(prompt, model=OLLAMA_MODEL):
+def query_ollama(prompt: str, model: str = OLLAMA_MODEL) -> str:
     """
     Query Ollama API and return the response.
     """
@@ -37,14 +37,14 @@ def query_ollama(prompt, model=OLLAMA_MODEL):
         print(f"Error querying Ollama: {e}")
         sys.exit(1)
 
-def read_c_file(filepath):
+def read_c_file(filepath: Path) -> str:
     """
     Read a C source file.
     """
     with open(filepath, 'r') as f:
         return f.read()
 
-def extract_function_signatures(code):
+def extract_function_signatures(code: str) -> list[str]:    
     """
     Extract function signatures from C code to create declarations.
     Returns a list of function declaration strings.
@@ -52,7 +52,7 @@ def extract_function_signatures(code):
     signatures = []
     
     # Pattern to match function definitions (simplified)
-    # Matches: return_type function_name(parameters) {
+    # Matches: return_type function_name(parameters) 
     pattern = r'^\s*([a-zA-Z_][a-zA-Z0-9_\s\*]*?)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*\{'
     
     for line in code.split('\n'):
@@ -72,12 +72,13 @@ def extract_function_signatures(code):
     
     return signatures
 
-def create_header_file(code, code_path):
+def create_header_file(code: str, code_path: Path) -> Path | None:
     """
     Create a header file for the source code with function declarations.
+    Add include to the main .c file.
     """
     header_filename = code_path.stem + '.h'
-    header_path = CODE_DIR / header_filename
+    header_path = os.path.join(CODE_DIR, header_filename)
     
     # Extract function signatures
     signatures = extract_function_signatures(code)
@@ -100,15 +101,35 @@ def create_header_file(code, code_path):
 
 #endif /* {guard_name} */
 """
-    
+        
     # Write header file
     with open(header_path, 'w') as f:
         f.write(header_content)
     
     print(f"Created header file: {header_path}")
+
+    # Add include to the main .c file if not already present
+    include_statement = f'#include "{header_filename}"'
+    if include_statement not in code:
+        with open(code_path, 'r') as f:
+            original_code = f.read()
+        
+        # Insert include after existing includes or at the top
+        lines = original_code.split('\n')
+        insert_index = 0
+        for i, line in enumerate(lines):
+            if line.strip().startswith('#include'):
+                insert_index = i + 1
+        
+        lines.insert(insert_index, include_statement)
+        
+        with open(code_path, 'w') as f:
+            f.write('\n'.join(lines))
+        
+        print(f"Added include statement to {code_path.name}: {include_statement}")
     return header_path
 
-def create_test_generation_prompt(code, filename, header_filename=None):
+def create_test_generation_prompt(code: str, filename: str, header_filename: str | None = None) -> str:
     """
     Create a prompt for generating unit tests.
     """
@@ -120,175 +141,22 @@ def create_test_generation_prompt(code, filename, header_filename=None):
             base_prompt = f.read()
         
         # Replace placeholders if they exist
-        prompt = base_prompt.replace('{filename}', filename)
-        prompt = prompt.replace('{header_include}', header_include)
-        prompt = prompt + f"\n\nSOURCE CODE:\n```c\n{code}\n```"
+        prompt = base_prompt + f"\nAdd this header to the includes: ../code/{header_include}.\nCode: {code}\n"
     else:
-        prompt = f"""You are the TESTER agent. Your job is to generate comprehensive unit tests for glibc C code.
+        # Use a generic prompt
+        print("Warning: Prompt file not found, using generic prompt.")
+        prompt = f"""Write unit tests in C for the following source code file named.
+        Use the following header inclusion: {header_include}
 
-SOURCE FILE: {filename}
-
-SOURCE CODE:
-```c
-{code}
-```
-
-RESPONSIBILITIES:
-
-1. ANALYZE the source code and identify:
-   - All functions that need testing
-   - All execution paths (branches, loops, conditions)
-   - All boundary conditions (0, -1, NULL, MAX_INT, MIN_INT, empty inputs)
-   - All error conditions (invalid inputs, edge cases, overflow/underflow)
-   - All possible return values and states
-
-2. GENERATE unit tests covering:
-   - TC-01: Normal/Happy Path - Standard use cases with valid inputs
-   - TC-02: Boundary Values - Test at, below, and above limits
-   - TC-03: Edge Cases - Empty inputs, null pointers, zero-length, extreme values
-   - TC-04: Error Handling - Invalid inputs, error returns, exceptional conditions
-   - TC-05: Logic Coverage - Each branch, each condition (true/false), each loop iteration (0, 1, many)
-   - TC-06: Type Edge Cases - INT_MAX, INT_MIN, SIZE_MAX, signed/unsigned boundaries
-   - TC-07: Memory Cases - NULL pointers, uninitialized values (if applicable)
-
-3. STRUCTURE Requirements:
-   - Create ONE complete C file with MULTIPLE test functions (minimum 8-12 tests)
-   - Include: {header_include}
-   - Each test function follows naming: test_<function_name>_<scenario>()
-   - Use descriptive scenario names: _normal, _boundary_zero, _null_pointer, _overflow, etc.
-   - Each test uses assert() from <assert.h> for validation
-   - Each test prints status using printf(): "✓ test_name passed\\n"
-   - Include main() function that calls ALL test functions sequentially
-   - main() returns 0 on complete success, 1 if any assertion fails
-
-4. CODE TEMPLATE:
-```c
-#include <assert.h>
-#include <stdio.h>
-#include <limits.h>
-#include <string.h>
-#include <stdlib.h>
-{header_include}
-
-// ============================================
-// TEST FUNCTIONS
-// ============================================
-
-void test_function_normal_case() {{
-    // Test standard, expected behavior
-    int result = function(valid_input);
-    assert(result == expected_output);
-    printf("✓ test_function_normal_case passed\\n");
-}}
-
-void test_function_boundary_zero() {{
-    // Test boundary at zero
-    int result = function(0);
-    assert(result == expected_for_zero);
-    printf("✓ test_function_boundary_zero passed\\n");
-}}
-
-void test_function_boundary_negative() {{
-    // Test negative boundary
-    int result = function(-1);
-    assert(result == expected_for_negative);
-    printf("✓ test_function_boundary_negative passed\\n");
-}}
-
-void test_function_edge_null() {{
-    // Test NULL pointer handling (if applicable)
-    int result = function(NULL);
-    assert(result == expected_error_value);
-    printf("✓ test_function_edge_null passed\\n");
-}}
-
-void test_function_edge_max() {{
-    // Test maximum value
-    int result = function(INT_MAX);
-    assert(result == expected_for_max);
-    printf("✓ test_function_edge_max passed\\n");
-}}
-
-void test_function_error_invalid() {{
-    // Test error handling
-    int result = function(invalid_input);
-    assert(result == error_code);
-    printf("✓ test_function_error_invalid passed\\n");
-}}
-
-void test_function_logic_branch_true() {{
-    // Test specific branch taken
-    int result = function(value_for_true_branch);
-    assert(result == expected_from_true_branch);
-    printf("✓ test_function_logic_branch_true passed\\n");
-}}
-
-void test_function_logic_branch_false() {{
-    // Test alternative branch
-    int result = function(value_for_false_branch);
-    assert(result == expected_from_false_branch);
-    printf("✓ test_function_logic_branch_false passed\\n");
-}}
-
-// ... Generate 8-15 total test functions covering all scenarios ...
-
-// ============================================
-// MAIN TEST RUNNER
-// ============================================
-
-int main() {{
-    printf("\\n========================================\\n");
-    printf("Running tests for {filename}\\n");
-    printf("========================================\\n\\n");
-    
-    test_function_normal_case();
-    test_function_boundary_zero();
-    test_function_boundary_negative();
-    test_function_edge_null();
-    test_function_edge_max();
-    test_function_error_invalid();
-    test_function_logic_branch_true();
-    test_function_logic_branch_false();
-    // ... call all test functions ...
-    
-    printf("\\n========================================\\n");
-    printf("All tests passed successfully!\\n");
-    printf("========================================\\n");
-    return 0;
-}}
-```
-
-CRITICAL RULES:
-
-1. Output ONLY valid C code - no markdown, no explanations, no comments outside the code
-2. Every test function must be self-contained and test ONE specific scenario
-3. Use descriptive names that clearly indicate what is being tested
-4. Include necessary headers at the top
-5. Use {header_include} to access the functions being tested
-6. Ensure all tests are called in main()
-7. Use assert() for all validations
-8. Print clear success messages for each test
-9. Generate minimum 8-12 test functions, more for complex code
-10. Cover ALL functions present in the source code
-11. Test both success paths AND failure paths
-
-FLOATING-POINT RULES (if applicable):
-- For floating-point comparisons, use epsilon-based comparison:
-  assert(fabs(result - expected) < 1e-6);
-- Never use direct == for float or double comparisons
-
-POINTER RULES:
-- Always test NULL pointer cases where applicable
-- Test valid pointer with valid data
-- Test pointer to empty data (if applicable)
-
-OUTPUT FORMAT:
-Provide ONLY the complete C test file as plain text. No markdown code blocks, no explanations before or after.
-Begin directly with #include statements and end with the closing brace of main()."""
+        FILE NAME: {filename}
+        SOURCE CODE:
+        ```c
+        {code}
+        ```"""
 
     return prompt
 
-def validate_test_code(test_code):
+def validate_test_code(test_code: str) -> str:
     """
     Validate and clean the generated test code.
     """
@@ -304,7 +172,7 @@ def validate_test_code(test_code):
     
     return test_code.strip()
 
-def save_test_file(test_code, original_filename):
+def save_test_file(test_code: str, original_filename: str) -> Path:
     """
     Save generated test code to a file.
     """
@@ -317,29 +185,32 @@ def save_test_file(test_code, original_filename):
     print(f"Saved test file: {test_path}")
     return test_path
 
-def compile_and_run_test(test_path, code_path, header_path=None):
+def compile_and_run_test(test_path: Path, code_path: Path, header_path: Path | None = None) -> dict:
     """
     Compile and execute the test.
     """
     # Define executable path
     test_executable = test_path.with_suffix('')
-    
-    # Prepare include directories
-    include_dirs = ['-I', str(CODE_DIR)]
+
+    # Include directory for header if exists
+    include_dir = ["-I", str(CODE_DIR)] if header_path else []
     
     # Compile command
+    # Format: gcc test_path.c code_path.c -lm -Wall -Wextra -Wno-unused-variable -Wno-unused-function -o test_executable
     compile_cmd = [
         'gcc',
-        '-o', str(test_executable),
         str(test_path),
         str(code_path),
-        *include_dirs,
-        '-lm',  # Math library
-        '-Wall',  # Enable warnings
-        '-Wno-unused-variable',  # Suppress unused variable warnings
-        '-Wno-unused-function'  # Suppress unused function warnings
-    ]
-    
+        '-lm',
+        '-Wall',
+        '-Wextra',
+        '-Wno-unused-variable',
+        '-Wno-unused-function',
+        '-o',
+        str(test_executable)
+    ] + include_dir 
+
+
     print(f"Compiling: {' '.join(compile_cmd)}")
     compile_result = subprocess.run(
         compile_cmd,
@@ -354,7 +225,8 @@ def compile_and_run_test(test_path, code_path, header_path=None):
         return {
             'build_success': False,
             'execution_success': False,
-            'tests_passed': False,
+            'all_tests_passed': False,
+            'tests_passed': 0,
             'tests_run': 0,
             'stdout': '',
             'stderr': compile_result.stderr
@@ -371,10 +243,12 @@ def compile_and_run_test(test_path, code_path, header_path=None):
         )
         
         execution_success = True
-        tests_passed = exec_result.returncode == 0
+        all_tests = exec_result.returncode == 0
         
         # Count tests run (count ✓ symbols)
-        tests_run = exec_result.stdout.count('✓')
+        tests_failed = exec_result.stdout.count('✗')
+        tests_passed = exec_result.stdout.count('✓')
+        total_tests = tests_passed + tests_failed
         
         # Clean up executable
         if test_executable.exists():
@@ -383,8 +257,9 @@ def compile_and_run_test(test_path, code_path, header_path=None):
         return {
             'build_success': True,
             'execution_success': execution_success,
+            'all_tests_passed': all_tests,
             'tests_passed': tests_passed,
-            'tests_run': tests_run,
+            'tests_run': total_tests,
             'stdout': exec_result.stdout,
             'stderr': exec_result.stderr
         }
@@ -395,7 +270,8 @@ def compile_and_run_test(test_path, code_path, header_path=None):
         return {
             'build_success': True,
             'execution_success': False,
-            'tests_passed': False,
+            'all_tests_passed': False,
+            'tests_passed': 0,
             'tests_run': 0,
             'stdout': '',
             'stderr': 'Test execution timed out after 30 seconds'
@@ -406,32 +282,32 @@ def calculate_metrics(test_path, code_path, execution_results):
     Calculate evaluation metrics for the generated tests.
     """
     metrics = {
-        'valid_unit_tests': {},
-        'effective_unit_tests': {},
+        'validity': {},
+        'effectiveness': {},
         'readability': {}
     }
     
     # =========== Validity Metrics ============
-    metrics['valid_unit_tests']['build_success'] = execution_results['build_success']
-    metrics['valid_unit_tests']['execution_success'] = execution_results['execution_success']
-    metrics['valid_unit_tests']['tests_passed'] = execution_results['tests_passed']
-    metrics['valid_unit_tests']['tests_run'] = execution_results['tests_run']
+    metrics['validity']['build_success'] = execution_results['build_success']
+    metrics['validity']['execution_success'] = execution_results['execution_success']
+    metrics['validity']['tests_passed'] = execution_results['tests_passed']
+    metrics['validity']['tests_run'] = execution_results['tests_run']
     
     # ========= Effectiveness Metrics =========
     # TODO: Implement line coverage calculation
     # Example: subprocess.run(['lcov', '--capture', '--directory', '.', '--output-file', 'coverage.info'])
-    metrics['effective_unit_tests']['line_coverage'] = None  # Placeholder
+    metrics['effectiveness']['line_coverage'] = None  # Placeholder
     
     # TODO: Implement mutation score calculation
-    metrics['effective_unit_tests']['mutation_score'] = None  # Placeholder
+    metrics['effectiveness']['mutation_score'] = None  # Placeholder
     
     # =========== Readability Metrics ==========
     # TODO: Implement Halstead complexity metrics
-    metrics['readability']['halstead_vocabulary'] = None  # Placeholder
-    metrics['readability']['halstead_length'] = None  # Placeholder
-    metrics['readability']['halstead_volume'] = None  # Placeholder
-    metrics['readability']['halstead_difficulty'] = None  # Placeholder
-    metrics['readability']['halstead_effort'] = None  # Placeholder
+    metrics['readability']['halstead_vocabulary'] = None    # Placeholder
+    metrics['readability']['halstead_length'] = None        # Placeholder
+    metrics['readability']['halstead_volume'] = None        # Placeholder
+    metrics['readability']['halstead_difficulty'] = None    # Placeholder
+    metrics['readability']['halstead_effort'] = None        # Placeholder
     
     return metrics
 
@@ -448,7 +324,9 @@ def process_code_file(code_path):
     
     # Create header file for the code
     header_path = create_header_file(code, code_path)
-    header_filename = header_path.name if header_path else None
+    print(f"Header path: {header_path}")
+    if header_path:
+        header_filename = header_path.split('/')[-1]
     
     # Generate test
     print("Generating unit tests via Ollama...")
@@ -484,7 +362,8 @@ def process_code_file(code_path):
     print(f"\nSummary:")
     print(f"  Build: {'✓' if execution_results['build_success'] else '✗'}")
     print(f"  Execution: {'✓' if execution_results['execution_success'] else '✗'}")
-    print(f"  Tests Passed: {'✓' if execution_results['tests_passed'] else '✗'}")
+    print(f"  All Tests Passed: {'✓' if execution_results['all_tests_passed'] else '✗'}")
+    print(f"  Tests Passed: {execution_results['tests_passed']}")
     print(f"  Tests Run: {execution_results['tests_run']}")
     
     return result
@@ -492,7 +371,6 @@ def process_code_file(code_path):
 
 # ============= Main Processing Loop =============
 def main():
-    """ Main processing loop. """
     print("Starting unit test generation and evaluation...")
     print(f"Ollama URL: {OLLAMA_URL}")
     print(f"LLM Model: {OLLAMA_MODEL}")
@@ -524,7 +402,8 @@ def main():
         'processed_files': len(results),
         'successful_builds': sum(1 for r in results if r['execution_results']['build_success']),
         'successful_executions': sum(1 for r in results if r['execution_results']['execution_success']),
-        'all_tests_passed': sum(1 for r in results if r['execution_results']['tests_passed']),
+        'all_tests_passed': sum(1 for r in results if r['execution_results']['all_tests_passed']),
+        'total_tests_passed': sum(r['execution_results']['tests_passed'] for r in results),
         'total_tests_run': sum(r['execution_results']['tests_run'] for r in results),
         'results': results
     }
@@ -541,6 +420,7 @@ def main():
     print(f"Successful builds: {summary['successful_builds']}")
     print(f"Successful executions: {summary['successful_executions']}")
     print(f"All tests passed: {summary['all_tests_passed']}")
+    print(f"Total Tests passed: {summary['total_tests_passed']}")
     print(f"Total tests run: {summary['total_tests_run']}")
     print(f"Summary saved to: {summary_path}")
     print(f"{'='*60}")

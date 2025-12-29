@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the test case generator script and prompt file to the container
 COPY generator.py .
-COPY prompts/ut_prompt_v1.txt ./prompt.txt
+COPY prompts/ut_prompt_v2.txt ./prompt.txt
 
 # Define environment variables for directories and settings
 ENV FUNCTIONS_DIR=/app/code

@@ -3,7 +3,7 @@ set -e
 
 # Configuration
 OLLAMA_PORT=${OLLAMA_PORT:-11434}
-OLLAMA_MODEL=${OLLAMA_MODEL:-llama3}
+OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:3b}
 OLLAMA_URL=${OLLAMA_URL:-"http://localhost:${OLLAMA_PORT}"}
 CONTAINER_NAME="glibc-unit-test-generator"
 IMAGE_NAME="glibc-unit-test-generator-image"
@@ -58,7 +58,7 @@ start_ollama() {
 # Check if model is available
 check_model() {
     echo -e "\n${YELLOW}Checking if model '${OLLAMA_MODEL}' is available...${NC}"
-    if curl -s "http://localhost:${OLLAMA_PORT}/api/tags" | grep -q "\"name\":\"${OLLAMA_MODEL}\""; then
+    if curl -s "http://localhost:${OLLAMA_PORT}/api/tags" | grep -q "\"name\":\"${OLLAMA_MODEL}:latest\""; then
         echo -e "${GREEN}✓ Model '${OLLAMA_MODEL}' is available${NC}"
     else
         echo -e "${YELLOW}Model '${OLLAMA_MODEL}' not found. Pulling...${NC}"

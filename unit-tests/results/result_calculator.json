@@ -1,0 +1,33 @@
+{
+  "source_file": "calculator.c",
+  "test_file": "test_calculator.c",
+  "header_file": "calculator.h",
+  "execution_results": {
+    "build_success": true,
+    "execution_success": true,
+    "all_tests_passed": true,
+    "tests_passed": 3,
+    "tests_run": 3,
+    "stdout": "\u2713 PASS: test__logic__add\n\u2713 PASS: test__boundary__multiply\n\u2713 PASS: test__error__multiply_by_zero\n",
+    "stderr": ""
+  },
+  "metrics": {
+    "validity": {
+      "build_success": true,
+      "execution_success": true,
+      "tests_passed": 3,
+      "tests_run": 3
+    },
+    "effectiveness": {
+      "line_coverage": null,
+      "mutation_score": null
+    },
+    "readability": {
+      "halstead_vocabulary": null,
+      "halstead_length": null,
+      "halstead_volume": null,
+      "halstead_difficulty": null,
+      "halstead_effort": null
+    }
+  }
+}

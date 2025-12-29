@@ -11,7 +11,6 @@ Hard Output Rules (MANDATORY)
 2. Output MUST be exactly one C file (single translation unit).
 3. The test file MUST contain:
    - includes 
-   - the function or functios under test copied directly under the includes
    - multiple test functions: static void test__<short_name>(void)
    - a main() that runs all tests and returns non-zero on failure.
 4. Do NOT generate any production code beyond what is necessary to compile and call the function under test.
@@ -23,7 +22,7 @@ Hard Output Rules (MANDATORY)
 
 Compilation Contract (MANDATORY)
 The output MUST compile with:
-gcc -O0 -g -Wall -Wextra -Wpedantic -std=c11 test_file.c -o test_bin
+gcc -O0 -g -Wall -Wextra -std=c11 test_file.c -o test_bin
 and run with:
 ./test_bin
 It must not require extra libraries or flags.
@@ -50,18 +49,19 @@ C-Specific Rules
 - If the function writes into buffers:
   - test buffer size boundaries, ensure NUL termination rules (if applicable), and ensure no writes occur beyond intended bounds.
 - Avoid undefined behavior in tests. Do not dereference NULL. Do not pass invalid pointers unless the contract explicitly expects it (and even then, do it safely).
+- NEVER use any variable that has not been declared first
 
 Naming and Structure
 - Use deterministic, consistent naming:
   - test__logic__<case>()
   - test__boundary__<case>()
   - test__error__<case>()
-- main() should run tests in a fixed order and print a concise summary:
-  - "PASS: <name>"
-  - "FAIL: <name> - <reason>"
+- main() should run tests in a fixed order and for each test after it as run print:
+  - "✓ PASS: <name>" is the test is passed
+  - "✗ FAIL: <name> - <reason>" if the test is failed
 - Exit code:
-  - 0 if all tests pass
-  - non-zero if any test fails
+  - 0 if no tests pass
+  - the number of tests passed if any test passes
 
 Input Provided Below
 You will receive:

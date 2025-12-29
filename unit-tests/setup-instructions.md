@@ -130,7 +130,7 @@ Each result file contains:
 
 **Compilation errors:**
 - Check if your code has external dependencies
-- Modify `compile_cmd` in `process.py` to add required libraries
+- Modify `compile_cmd` in `generator.py` to add required libraries
 
 ## Example Code File
 
