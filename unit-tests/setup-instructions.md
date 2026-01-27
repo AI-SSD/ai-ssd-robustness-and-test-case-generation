@@ -118,24 +118,6 @@ Each result file contains:
 }
 ```
 
-## Troubleshooting
-
-**Ollama not starting:**
-- Ensure Ollama is installed: `ollama --version`
-- Check if port 11434 is available: `lsof -i :11434`
-
-**Docker issues:**
-- Ensure Docker is running: `docker ps`
-- Check permissions: May need `sudo` on Linux
-
-**No .c files found:**
-- Verify files are in `./code/` directory
-- Check file extensions are `.c` (lowercase)
-
-**Compilation errors:**
-- Check if your code has external dependencies
-- Modify `compile_cmd` in `generator.py` to add required libraries
-
 ## Example Code File
 
 Place this in `./code/example.c` to test the system:
