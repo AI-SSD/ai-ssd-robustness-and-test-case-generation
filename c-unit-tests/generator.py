@@ -156,9 +156,9 @@ def create_test_generation_prompt(code: str, filename: str, header_filename: str
 
     return prompt
 
-def validate_test_code(test_code: str) -> str:
+def clean_test_code(test_code: str) -> str:
     """
-    Validate and clean the generated test code.
+    Clean the generated test code.
     """
     # Remove markdown code blocks if present
     if '```c' in test_code:
@@ -332,7 +332,7 @@ def process_code_file(code_path):
     print("Generating unit tests via Ollama...")
     prompt = create_test_generation_prompt(code, code_path.name, header_filename)
     test_code = query_ollama(prompt)
-    test_code = validate_test_code(test_code)
+    test_code = clean_test_code(test_code)
     
     # Save test file
     test_path = save_test_file(test_code, code_path.name)
