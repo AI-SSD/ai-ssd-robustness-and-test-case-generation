@@ -1,6 +1,6 @@
-# Glibc Unit Test Generator with Ollama
+# Unit Test Generator with Ollama for C Functions
 
-This project automatically generates and evaluates unit tests for glibc C code using Ollama.
+This project automatically generates and evaluates unit tests for C code using Ollama.
 It is run once to generate test cases for all files inside a given folder ("code" in this case).
 
 ## Project Methodology
