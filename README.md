@@ -11,6 +11,7 @@ This repository contains code and resources for using Large Language Models (LLM
 
 This methodology serves as a baseline for generating test cases using LLMs. It was developed in the scope of the generation of simple unit tests for basic C functions, and it can be easily adapted to generate test cases for more complex software systems. The approach involves the following steps:
 
-<img width="5321" height="5194" alt="methodology-unit-test-case-generation_background" src="https://github.com/user-attachments/assets/1749c7e7-5df9-4d58-b9fc-fa6a39ae82d6" />
+<img width="5742" height="5430" alt="methodology-unit-test-case-generation_background" src="https://github.com/user-attachments/assets/7a4b0f6f-fa7a-45e6-b160-d56272699d56" />
 
-Auhor: *Francisca Camacho Pereira*
+## Authors & Colaborators
+- *Francisca Camacho Pereira*
