@@ -5,7 +5,7 @@ It is run once to generate test cases for all files inside a given folder ("code
 
 ## Project Methodology
 
-<img width="5321" height="5194" alt="methodology-unit-test-case-generation_background" src="https://github.com/user-attachments/assets/fa011b47-30e0-4087-8c4d-f135e1acf15d" />
+<img width="5742" height="5430" alt="methodology-unit-test-case-generation_background" src="https://github.com/user-attachments/assets/f4a3f786-a1b9-420d-bdfe-5e7f7e7e60c8" />
 
 ## Project Structure
 
