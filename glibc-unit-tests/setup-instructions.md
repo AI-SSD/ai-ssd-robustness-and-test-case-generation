@@ -92,10 +92,8 @@ This single command will:
 ## Configuration
 
 You can customize the behavior with environment variables.
-
-You must define whether the Ollama host runs locally or remotely. If using a remote host, you must also specify the URL.
-
-This through environmental variables or by providing input when prompted at runtime. 
+You must define **whether the Ollama host runs locally or remotely**. If using a remote host, you must also specify the URL.
+This can be done through environment variables or by providing input when prompted at runtime. 
 
 ```bash
 OLLAMA_HOST=local ./run.sh
