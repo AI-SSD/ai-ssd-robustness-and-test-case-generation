@@ -9,7 +9,7 @@
 # - to use a different image name do "export IMAGE_NAME=your_image_name"
 
 # Robustness flags
-set -Eeuo pipefail
+set -Eeo pipefail
 IFS=$'\n\t'
 
 # Colors for output
@@ -39,13 +39,13 @@ fi
 # Ask for Ollama URL if host is remote and URL not provided
 if [ "$OLLAMA_HOST" == "local" ]; then
     OLLAMA_URL="http://host.docker.internal:${OLLAMA_PORT}"
-else if [ "$OLLAMA_HOST" == "remote" ]; then
+elif [ "$OLLAMA_HOST" == "remote" ]; then
     if [ -z "$OLLAMA_URL" ]; then
         read -p ">>> Enter the Ollama URL (e.g. http://1.1.1.1:11434): " OLLAMA_URL
     fi
 else
     echo -e "${RED}✗ Invalid input for Ollama host.${NC}"
-    return 1
+    exit 1
 fi
 
 
@@ -89,7 +89,7 @@ start_ollama() {
         # Wait for Ollama to be ready
         echo -n "Waiting for Ollama to be ready"
         for i in {1..30}; do
-            if curl -s "${OLLAMA_URL}/api/tags" > /dev/null 2>&1; then
+            if curl -s "${LOCAL_OLLAMA_URL}/api/tags" > /dev/null 2>&1; then
                 echo -e "\n${GREEN}✓ Ollama is ready${NC}"
                 return 0
             fi
@@ -107,7 +107,13 @@ start_ollama() {
 # Check if model is available
 check_model() {
     echo -e "\n${YELLOW}Checking if model '${OLLAMA_MODEL}' is available...${NC}"
-    if curl -s "${OLLAMA_URL}/api/tags" | grep -q "\"name\":\"${OLLAMA_MODEL}:latest\""; then
+    if [ "$OLLAMA_HOST" == "local" ]; then
+        temp_url="${LOCAL_OLLAMA_URL}"
+    else
+        temp_url="${OLLAMA_URL}"
+    fi
+
+    if curl -s "${temp_url}/api/tags" | grep -q "\"name\":\"${OLLAMA_MODEL}:latest\""; then
         echo -e "${GREEN}✓ Model '${OLLAMA_MODEL}' is available${NC}"
     else
         echo -e "${YELLOW}Model '${OLLAMA_MODEL}' not found. Pulling...${NC}"
@@ -209,11 +215,11 @@ main() {
     check_model
     
     # Build and run container
-    build_image
-    run_container
+    #build_image
+    #run_container
     
     # Print results
-    display_results
+    #display_results
     
     echo -e "\n${GREEN}========================================${NC}"
     echo -e "${GREEN}  All done!${NC}"
