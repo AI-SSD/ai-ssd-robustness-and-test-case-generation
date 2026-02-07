@@ -13,7 +13,7 @@ To be defined. For now, assume a similar methodology to the one described in the
 ├── Dockerfile                  # Container definition
 ├── orchestrator.py             # Python orchestration script. Main entry point to the programrun by the container after setup.
 ├── requirements.txt            # Python dependencies
-├── create_glibc_build.sh       # Script to create the glibc build environment and build glibc. 
+├── build_glibc.sh              # Script to create the glibc build environment and build glibc. 
 ├── prompt_generator.py         # Script to generate the prompt.
 ├── gen_ai_querier.py           # Script to query Ollama for test generation.
 ├── test_generator.py           # Script to generate the test files. Calls the prompt generator and the AI querier.
@@ -67,6 +67,10 @@ metadata.json structure example:
 
 ## Usage
 
+> [!WARNING]
+> - Start Docker on your machine. Optionally, start Ollama if you want to check its status before running the script (the script will also check and start it if needed).
+> - Define the specific configurations for the script through environment variables if you want to override the defaults (see Configuration section below).
+
 Simply run:
 
 ```bash
@@ -79,7 +83,7 @@ This single command will:
 3. ✓ Build the Docker container
 4. ✓ Execute the Docker container, which will:
    - Process the data in the `inputs/` folder
-   - Create the glibc build environment and build glibc (**create_glibc_build.py**)
+   - Create the glibc build environment and build glibc (**build_glibc.sh**)
    - Generate unit tests using Ollama (**test_generator.py**, which calls **prompt_generator.py** and **gen_ai_querier.py**)
    - Compile, execute and evaluate the tests (**test_evaluator.py**)
    - Save results to `tests/` and `results/`
@@ -87,23 +91,23 @@ This single command will:
    
 ## Configuration
 
-You can customize the behavior with environment variables:
+You can customize the behavior with environment variables.
+
+You must define whether the Ollama host runs locally or remotely. If using a remote host, you must also specify the URL.
+
+This through environmental variables or by providing input when prompted at runtime. 
 
 ```bash
-# Choose a local or remote Ollama host (this one tends to be necessary for Docker)
-OLLAMA_HOST=localhost ./run.sh
+OLLAMA_HOST=local ./run.sh
 or
-OLLAMA_HOST=remote ./run.sh
-
-# Use a different Ollama host (this one tends to be necessary)
-OLLAMA_URL=http://host.docker.internal:11434 ./run.sh
-
-# Use a different model
-OLLAMA_MODEL=llama2 ./run.sh
-
-# Use a different port
-OLLAMA_PORT=11435 ./run.sh
+OLLAMA_HOST=remote OLLAMA_URL=http://<remote_host_ip> ./run.sh
 ```
+
+Other configurations that can be set through environment variables include:
+- **Changing Ollama port** (default: 11434) ```OLLAMA_PORT=<port_nbr> ./run.sh```
+- **Changing Ollama model** (default: `qwen2.5-coder:3b`) ```OLLAMA_MODEL=<model_name> ./run.sh```
+- **Changing container name** (default: `glibc-unit-tests-container`) ```CONTAINER_NAME=<container_name> ./run.sh```
+- **Reusing existing Docker image** (default: `false`) ```REUSE_IMAGE=true ./run.sh```
 
 ## Output
 
