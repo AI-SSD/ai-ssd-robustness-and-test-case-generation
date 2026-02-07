@@ -1,27 +1,3 @@
-# File Workflow
-# 1. Read argument inputs (whether Ollama runs locally or remotely, the model to use and the Ollama URL)
-# 2.1. If Ollama is local, check if it's installed and running. If not, start it and wait for it to be ready. 
-# 2.2. If Ollama is remote, check if it's reachable at the provided URL.
-# 3. Check if the specified model is available. If not, pull it.
-# 4. Check if the ./code directory exists and has the necessary files:
-#    - Json with information on the function to test (name, signature, description, etc.)
-#    - C file with the implementation of the function to test
-#    - The correct glibc version for that function
-# 5. Check if docker is installed and running. If not, print instructions to install/start it.
-# 6. Build the Docker image.
-# 7. Run the Docker container, mounting the code directory and passing necessary environment variables.
-
-# Inside the Docker container:
-# 1. Install all necessary dependencies (glibc build tools, testing tools, etc.)
-# 2. Create the correct directory structure and mount the code directory
-# 3. Build the specified version of glibc from source
-# 4. Construct the prompt for the test generator model, including the function information and any additional context (e.g. glibc version, edge cases to consider, etc.)
-# 5. Call the Ollama API to generate the test cases
-# 6. Save the generated test cases in the correct build structure for glibc tests
-# 7. Build and run the tests, collecting results and coverage information
-# 8. Save results and coverage information to the mounted results directory
-# 9. Terminate the container
-
 #!/bin/bash
 
 # Before running this script, make sure to:
@@ -213,10 +189,10 @@ display_results() {
     fi
 }
 
+
 # ======================================================
 # Main execution
 # ======================================================
-# Main execution
 main() {
     # Check prerequisites
     check_inputs_directory
@@ -230,14 +206,13 @@ main() {
             return 1
         fi
     fi
-    
     check_model
     
-    # Build and run
+    # Build and run container
     build_image
     run_container
     
-    # Show results
+    # Print results
     display_results
     
     echo -e "\n${GREEN}========================================${NC}"
