@@ -3,6 +3,7 @@
 # Before running this script, make sure to:
 # - define the type of Ollama host (local or remote) by setting the OLLAMA_HOST environment variable or by providing input when prompted
 # - if using a remote Ollama, set the OLLAMA_URL environment variable or provide it when prompted
+# - to reuse an existing image instead of creating a new one each time, set REUSE_IMAGE=true
 # - to use a different Ollama port do "export OLLAMA_PORT=your_port"
 # - to use a different Ollama model do "export OLLAMA_MODEL=your_model"
 # - to use a different container name do "export CONTAINER_NAME=your_container_name"
@@ -25,6 +26,7 @@ echo -e "${GREEN}==================================================${NC}"
 # ======================================================
 # Configure environment variables if not set previously
 # ======================================================
+REUSE_IMAGE=${REUSE_IMAGE:-"false"}
 OLLAMA_PORT=${OLLAMA_PORT:-11434}
 OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:3b}
 LOCAL_OLLAMA_URL="http://localhost:${OLLAMA_PORT}"  # used only to test to Ollama connectivity while outside the container
@@ -167,7 +169,7 @@ run_container() {
     docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
     
     # Run container and mount volumes to share code and results
-    docker run --name "${CONTAINER_NAME}" \
+    docker run -it --rm --name "${CONTAINER_NAME}" \
         -v "$(pwd)/inputs:/app/inputs" \
         -v "$(pwd)/tests:/app/tests" \
         -v "$(pwd)/results:/app/results" \
@@ -215,8 +217,12 @@ main() {
     check_model
     
     # Build and run container
-    #build_image
-    #run_container
+    if [ "$REUSE_IMAGE" == "true" ]; then
+        echo -e "${YELLOW}Reusing existing Docker image '${IMAGE_NAME}'...${NC}"
+    else
+        build_image
+    fi
+    run_container
     
     # Print results
     #display_results
