@@ -1,11 +1,10 @@
-# Base image: full Ubuntu 22.04 
-# Chosen because it already includes many necessary glibc build tools
-FROM ubuntu:22.04
+# Base image: Ubuntu 20.04 for glibc 2.31 compatibility
+# Use 20.04 for testing glibc 2.31-2.32, 18.04 for 2.27, etc.
+FROM ubuntu:20.04
 
 # Environment variables for non-interactive installs
 # Can be overridden at runtime if needed 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV CODE_DIR=/app/code
+ENV INPUTS_DIR=/app/inputs
 ENV TESTS_DIR=/app/tests
 ENV RESULTS_DIR=/app/results
 ENV GLIBC_DIR=/app/glibc_build
@@ -18,17 +17,22 @@ WORKDIR /app
 RUN mkdir -p $CODE_DIR $TESTS_DIR $RESULTS_DIR $GLIBC_DIR
 
 # Install necessary packages for building and testing glibc
-RUN apt-get update \
-    && apt-get install -y \
-       build-essential \      # gcc, g++, make needed for glibc build
-       wget curl ca-certificates \
-       python3 python3-pip python3-dev \ # Python for test generator
-       lcov \
-       clang \
-       valgrind \
-       automake autoconf libtool bison gawk pkg-config \
-       locales \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    # gcc, g++, make needed for glibc build
+    build-essential \
+    # Network utilities
+    wget curl ca-certificates \
+    # Python for test generator
+    python3 python3-pip python3-dev \
+    # Coverage tools
+    lcov \
+    # Tools for testing and debugging
+    clang valgrind \
+    # Build system tools
+    automake autoconf libtool bison gawk pkg-config \
+    # Locale support
+    locales \
+ && rm -rf /var/lib/apt/lists/*
 
 # Set UTF-8 locale (required for some glibc functions)
 RUN locale-gen en_US.UTF-8
