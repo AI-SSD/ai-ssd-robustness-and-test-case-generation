@@ -1,12 +1,13 @@
 #!/bin/bash
-set -e
+set -Eeuo pipefail
+IFS=$'\n\t'
 
 # Configuration
 OLLAMA_PORT=${OLLAMA_PORT:-11434}
 OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:3b}
 OLLAMA_URL=${OLLAMA_URL:-"http://localhost:${OLLAMA_PORT}"}
-CONTAINER_NAME="glibc-unit-test-generator"
-IMAGE_NAME="glibc-unit-test-generator-image"
+CONTAINER_NAME="c-unit-test-generator"
+IMAGE_NAME="c-unit-test-generator-image"
 
 # Colors for output
 RED='\033[0;31m'
@@ -15,7 +16,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  Glibc Unit Test Generator${NC}"
+echo -e "${GREEN}   Unit Test Generator for C Functions${NC}"
 echo -e "${GREEN}========================================${NC}"
 
 # Check if ollama is running
