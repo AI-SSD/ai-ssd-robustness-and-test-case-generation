@@ -1,7 +1,7 @@
 # Unit Test Generator with Ollama for GLibc Functions
 
-This project automatically generates and evaluates unit tests for C code using Ollama.
-It is run once to generate test cases for all files inside a given folder ("code" in this case).
+This project automatically generates and evaluates unit tests for glibc functions using Ollama.
+It is run once to generate test cases for the functions defined in the `inputs/` folder, and it outputs the generated test files in the `tests/` folder and the evaluation results in the `results/` folder.
 
 ## Project Methodology
 
