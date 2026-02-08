@@ -115,7 +115,7 @@ check_model() {
         temp_url="${OLLAMA_URL}"
     fi
 
-    if curl -s "${temp_url}/api/tags" | grep -q "\"name\":\"${OLLAMA_MODEL}:latest\""; then
+    if curl "${temp_url}/api/tags" | grep -q "\"name\":\"${OLLAMA_MODEL}\""; then
         echo -e "${GREEN}✓ Model '${OLLAMA_MODEL}' is available${NC}"
     else
         echo -e "${YELLOW}Model '${OLLAMA_MODEL}' not found. Pulling...${NC}"

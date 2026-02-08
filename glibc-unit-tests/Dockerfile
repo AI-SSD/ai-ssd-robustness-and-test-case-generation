@@ -1,6 +1,7 @@
-# Base image: Ubuntu 20.04 for glibc 2.31 compatibility
-# Use 20.04 for testing glibc 2.31-2.32, 18.04 for 2.27, etc.
-FROM ubuntu:20.04
+# Base image: a minimal Debian image to build and run glibc tests.
+# Debian is chosen for its stability and compatibility with all glibc versions.
+FROM debian:bookworm-slim
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Environment variables for non-interactive installs
 # Can be overridden at runtime if needed 
@@ -10,38 +11,46 @@ ENV RESULTS_DIR=/app/results
 ENV GLIBC_DIR=/app/glibc_build
 ENV GLIBC_VERSION=2.32
 ENV OLLAMA_URL=http://host.docker.internal:11434
-ENV OLLAMA_MODEL=codellama
+ENV OLLAMA_MODEL=qwen2.5-coder:3b
 
 # Create working folder and subfolders
 WORKDIR /app
-RUN mkdir -p $CODE_DIR $TESTS_DIR $RESULTS_DIR $GLIBC_DIR
+RUN mkdir -p $INPUTS_DIR $TESTS_DIR $RESULTS_DIR $GLIBC_DIR
 
 # Install necessary packages for building and testing glibc
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     # gcc, g++, make needed for glibc build
     build-essential \
     # Network utilities
     wget curl ca-certificates \
     # Python for test generator
-    python3 python3-pip python3-dev \
+    python3 python3-pip python3-dev python3-venv \
     # Coverage tools
     lcov \
     # Tools for testing and debugging
-    clang valgrind \
+    clang valgrind llvm \
     # Build system tools
-    automake autoconf libtool bison gawk pkg-config \
+    automake autoconf libtool bison gawk pkg-config texinfo \
     # Locale support
     locales \
- && rm -rf /var/lib/apt/lists/*
+    # Clean up apt cache to reduce image size (note to use apt-get update before installing anything new)
+    && rm -rf /var/lib/apt/lists/*
+
 
 # Set UTF-8 locale (required for some glibc functions)
 RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
-# Install Python dependencies
+# Setup Python virtual environment and install dependencies
+# Debian Bookworm does not allow installing packages in the system Python, 
+# so it must be done in a virtual environment or with --break-system-packages
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# Make the venv Python default
+# Use Python normally
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy test generator and evaluator scripts
 # ...
