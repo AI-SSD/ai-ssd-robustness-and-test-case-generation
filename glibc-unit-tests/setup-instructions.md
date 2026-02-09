@@ -15,7 +15,7 @@ To be defined. For now, assume a similar methodology to the one described in the
 ├── requirements.txt            # Python dependencies
 ├── build_glibc.sh              # Script to create the glibc build environment and build glibc. 
 ├── prompt_generator.py         # Script to generate the prompt.
-├── gen_ai_querier.py           # Script to query Ollama for test generation.
+├── llm_querier.py              # Script to query Ollama for test generation.
 ├── test_generator.py           # Script to generate the test files. Calls the prompt generator and the AI querier.
 ├── test_evaluator.py           # Script to compile, run and evaluate the generated tests.
 ├── run.sh                      # Main execution script inside the local machine. Builds the container and runs it.
