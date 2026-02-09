@@ -9,6 +9,8 @@ ENV INPUTS_DIR=/app/inputs
 ENV TESTS_DIR=/app/tests
 ENV RESULTS_DIR=/app/results
 ENV GLIBC_DIR=/app/glibc_build
+
+# Default variables overridable at runtime
 ENV GLIBC_VERSION=2.32
 ENV OLLAMA_URL=http://host.docker.internal:11434
 ENV OLLAMA_MODEL=qwen2.5-coder:3b
@@ -49,10 +51,10 @@ COPY requirements.txt .
 RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Make the venv Python default
-# Use Python normally
+# Use Python normally afterwards
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy test generator and evaluator scripts
+# Copy scrpts
 # ...
 
 # Optional: Download and compile custom GLIBC version
