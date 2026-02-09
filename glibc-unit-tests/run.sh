@@ -175,6 +175,7 @@ run_container() {
         -v "$(pwd)/results:/app/results" \
         -e OLLAMA_URL="${OLLAMA_URL}" \
         -e OLLAMA_MODEL="${OLLAMA_MODEL}" \
+        -e "GLIBC_VERSION=${GLIBC_VERSION}" \
         "${IMAGE_NAME}"
     
     echo -e "${GREEN}✓ Container execution completed${NC}"
