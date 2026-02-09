@@ -2,13 +2,13 @@ import requests
 import json
 from enum import Enum
 
-class LLMQuerier:
+class OllamaQuerier:
     class OperationMode(Enum):
         QUERY = "api/generate"
         CHAT = "api/chat"
 
     def __init__(self, ollama_url, ollama_model):
-        # Initialize the LLMQuerier with the Ollama URL, model, and operation mode (query or chat).
+        # Initialize the OllamaQuerier with the Ollama URL, model, and operation mode (query or chat).
         self.ollama_url = ollama_url
         self.ollama_model = ollama_model
 
