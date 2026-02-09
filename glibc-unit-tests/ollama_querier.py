@@ -126,7 +126,7 @@ class OllamaQuerier:
     def delete_first_messages(self, nbr_messages):
         # Delete the first N messages from the conversation history, but keep at least the system prompt.
         if self.conversation and len(self.conversation) > 1:
-            self.conversation = self.conversation[0] + self.conversation[nbr_messages + 1:]
+            self.conversation = [self.conversation[0]] + self.conversation[nbr_messages + 1:]
 
     def reset_conversation(self):
         self.conversation = [{

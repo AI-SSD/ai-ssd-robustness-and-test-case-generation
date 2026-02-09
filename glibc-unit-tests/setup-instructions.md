@@ -11,13 +11,13 @@ To be defined. For now, assume a similar methodology to the one described in the
 
 ```
 ├── Dockerfile                  # Container definition
-├── orchestrator.py             # Python orchestration script. Main entry point to the programrun by the container after setup.
+├── orchestrator.sh             # Shell orchestration script. Main entry point to the program run by the container after setup.
 ├── requirements.txt            # Python dependencies
 ├── build_glibc.sh              # Script to create the glibc build environment and build glibc. 
 ├── prompt_generator.py         # Script to generate the prompt.
 ├── ollama_querier.py           # Script to query Ollama for test generation.
-├── test_generator.py           # Script to generate the test files. Calls the prompt generator and the AI querier.
-├── test_evaluator.py           # Script to compile, run and evaluate the generated tests.
+├── test_case_generator.py      # Script to generate the test files. Calls the prompt generator and the AI querier.
+├── test_case_evaluator.py      # Script to compile, run and evaluate the generated tests.
 ├── run.sh                      # Main execution script inside the local machine. Builds the container and runs it.
 ├── inputs/                     # Input folder for the glibc functions and other necessary information.
 ├── prompts/                    # Folder for prompt templates.
