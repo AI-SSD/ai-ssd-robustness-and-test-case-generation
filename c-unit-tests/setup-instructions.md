@@ -3,6 +3,9 @@
 This project automatically generates and evaluates unit tests for C code using Ollama.
 It is run once to generate test cases for all files inside a given folder ("code" in this case).
 
+> [!DISCLAIMER]
+> The evaluation framework of the generated tests has not been implemented!
+
 ## Project Methodology
 
 <img width="5742" height="5430" alt="methodology-unit-test-case-generation_background" src="https://github.com/user-attachments/assets/f4a3f786-a1b9-420d-bdfe-5e7f7e7e60c8" />
