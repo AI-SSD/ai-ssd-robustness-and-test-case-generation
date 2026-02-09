@@ -7,6 +7,8 @@ class OllamaQuerier:
         QUERY = "api/generate"
         CHAT = "api/chat"
 
+    system_prompt = "You are a helpful assistant. Be concise and technical."
+
     def __init__(self, ollama_url, ollama_model):
         # Initialize the OllamaQuerier with the Ollama URL, model, and operation mode (query or chat).
         self.ollama_url = ollama_url
@@ -19,8 +21,29 @@ class OllamaQuerier:
         # Define the initial system prompt for chat mode
         self.conversation = [{
             "role": "system",
-            "content": "You are a helpful assistant. Be concise and technical."
+            "content": self.system_prompt
         }]
+
+        # Test connection before proceeding with queries.
+        # if self.test_connection() == False:
+        #       raise ConnectionError(f"Failed to connect to Ollama API at {self.ollama_url} or model '{self.ollama_model}' is not available.")
+
+    def test_connection(self):
+        # Test the connection to the Ollama API by checking if the model is available
+        try:
+            response = requests.get(f"{self.ollama_url}/api/tags")
+            response.raise_for_status()
+            response = response.json()
+            models = [model["name"] for model in response["models"]]
+            if self.ollama_model in models:
+                print(f"Successfully connected to Ollama API at {self.ollama_url}. Model '{self.ollama_model}' is available.")
+                return True
+            else:
+                print(f"Successfully connected to Ollama API at {self.ollama_url}, but model '{self.ollama_model}' is not available.")
+                return False
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to connect to Ollama API at {self.ollama_url}. Error: {e}")
+            return False
 
     def query(self, prompt, custom_headers=None):
         # Craft the payload for the query endpoint
@@ -34,7 +57,11 @@ class OllamaQuerier:
             headers.update(custom_headers)
 
         # Query the Ollama API a single time and return the response content
-        response = requests.post(self.query_endpoint, data=json.dumps(payload), headers=headers)
+        try:
+            response = requests.post(self.query_endpoint, data=json.dumps(payload), headers=headers)
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to connect to Ollama API at {self.ollama_url}. Error: {e}")
+            return None
         response.raise_for_status()
         response = response.json()
         
@@ -58,7 +85,11 @@ class OllamaQuerier:
         }
 
         # Query the Ollama API with the conversation history + new prompt
-        response = requests.post(self.chat_endpoint, json=payload)
+        try:
+            response = requests.post(self.chat_endpoint, json=payload)
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to connect to Ollama API at {self.ollama_url}. Error: {e}")
+            return None
         response.raise_for_status()
         response = response.json()
 
@@ -100,6 +131,5 @@ class OllamaQuerier:
     def reset_conversation(self):
         self.conversation = [{
             "role": "system",
-            "content": "You are a helpful assistant. Be concise and technical."
+            "content": self.system_prompt
         }]
-        
