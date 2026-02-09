@@ -4,7 +4,7 @@ This repository contains code and resources for using Large Language Models (LLM
 
 ## Repository Structure
 
-- **c-unit-tests/** — Contains a fully automated pipeline for generating unit test cases for basic C functions using LLMs in a containerized environment. This directory serves as a simple starting point and introcution to the capabilities of LLMs in test case generation.
+- **c-unit-tests/** — Contains a fully automated pipeline for generating unit test cases for basic C functions using LLMs in a containerized environment. This directory serves as a simple starting point and introduction to the capabilities of LLMs in test case generation.
 - **glibc-unit-tests/** — Focuses on generating test cases for the GNU C Library (glibc) using LLMs. This directory includes scripts and resources for creating test cases that target various functions within glibc in a fully automated and containerized manner.
 
 ## Baseline Methodology
