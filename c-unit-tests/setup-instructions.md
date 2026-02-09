@@ -3,7 +3,7 @@
 This project automatically generates and evaluates unit tests for C code using Ollama.
 It is run once to generate test cases for all files inside a given folder ("code" in this case).
 
-> [!DISCLAIMER]
+> [!WARNING]
 > The evaluation framework of the generated tests has not been implemented!
 
 ## Project Methodology
