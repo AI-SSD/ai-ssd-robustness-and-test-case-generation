@@ -52,11 +52,32 @@ Inside the inputs/ folder, create the following files and folders:
 ```
 metadata.json structure example:
 {
-    "glibc_version": "2.32",
-    "type": "function",
-    "name": "printf",
-    "signature": "int printf(const char *format, ...);",
-    "description": "Prints formatted output to stdout. The first argument is a format string that specifies how subsequent arguments are converted for output."
+  "inputs": [
+    {
+      "glibc_version": "2.2.5",
+      "type": "function",
+      "name": "printf",
+      "signature": "int printf(const char *format, ...);",
+      "description": "Prints formatted output to stdout.",
+      "code_file_path": "printf_example.c"
+    },
+    {
+      "glibc_version": "2.0",
+      "type": "function",
+      "name": "malloc",
+      "signature": "void *malloc(size_t size);",
+      "description": "Allocates a block of memory of the specified size.",
+      "code_file_path": "malloc_example.c"
+    },
+    {
+      "glibc_version": "2.1",
+      "type": "function",
+      "name": "strcpy",
+      "signature": "char *strcpy(char *dest, const char *src);",
+      "description": "Copies a string from source to destination.",
+      "code_file_path": "strcpy_example.c"
+    }
+  ]
 }
 ```
 
