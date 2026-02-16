@@ -1,0 +1,20 @@
+{
+  "inputs": [
+    {
+      "glibc_version": "2.3.4",
+      "type": "function",
+      "name": "getgrouplist",
+      "signature": "int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups);",
+      "description": "Get the list of groups for a user.",
+      "code_file_path": "getgrouplist_example.c"
+    },
+    {
+      "glibc_version": "2.19",
+      "type": "function",
+      "name": "__gconv_translit_find",
+      "signature": "int internal_function __gconv_translit_find (struct trans_struct *trans);",
+      "description": "Find a transliteration in the gconv database.",
+      "code_file_path": "__getgconv_translit_find_example.c"
+    }
+  ]
+}
