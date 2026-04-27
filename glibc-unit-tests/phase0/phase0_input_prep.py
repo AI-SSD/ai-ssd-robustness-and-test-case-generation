@@ -23,6 +23,12 @@ needed, but for now include:):
 
 This is intentionally a utility/sanitization script, not part of the core generation 
 logic. It should be run only to prepare clean input for the real stages.
+
+-> How to use:
+1. Place the raw CSV file(s) in the same directory as this script.
+2. Run the script: `python3 phase0_input_prep.py`
+3. Follow the interactive prompts to select the CSV file and map columns to categories.
+4. The sanitized output will be saved as `phase1_input.json` in the same directory.
 """
 
 import os
@@ -86,7 +92,7 @@ def main():
     3. Ask the user to map CSV columns to the canonical JSON categories.
     4. Generate `phase1_input.json` with normalized records.
     """
-    
+
     print("""
     ===============================================
     |                                            |
