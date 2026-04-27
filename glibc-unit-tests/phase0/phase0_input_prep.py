@@ -99,12 +99,19 @@ def main():
 
     # Create a new dataset with the selected columns and save it in json format
     output_data = []
+    empty_cell = False
     for row in data:
         output_row = {}
         for category, column in category_to_column_mapping.items():
             value = row.get(column)
+            if pd.isna(value) or value is None:
+                empty_cell = True
+                break
             output_row[category] = None if pd.isna(value) else value
-        output_data.append(output_row)
+
+        if not empty_cell:
+            output_data.append(output_row)
+            empty_cell = False
 
     # Save output in json format
     print(f"\nSaving output to {OUTPUT_FILE}...")
