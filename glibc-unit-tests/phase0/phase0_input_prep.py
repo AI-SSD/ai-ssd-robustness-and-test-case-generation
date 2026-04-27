@@ -1,11 +1,37 @@
+"""
+======================================================
+PRE-STAGE INPUT SANITIZER FOR GLIBC UNIT-TEST PIPELINE
+======================================================
+
+This script belongs to a pre-normalization stage that runs before the
+actual/real pipeline stages. Its only goal is to sanitize and reshape raw
+dataset input (CSV) into the canonical JSON structure expected by stage 1
+(`phase1_input.json`).
+
+The later stages assume a stable input schema. Source files used during
+experimentation can have inconsistent column names, missing fields, or extra
+columns. This pre-stage provides a one-time interactive mapping from CSV
+columns to the standard fields used by the pipeline (which can be extended as 
+needed, but for now include:):
+
+- Type:         function, macro, etc.
+- Scope:        public or internal to glibc
+- Name:         function/macro name
+- Path:         path to the glibc build file where the function/macro is defined
+- Code:         the actual code of the function/macro 
+- Description:  a brief description of the function/macro
+
+This is intentionally a utility/sanitization script, not part of the core generation 
+logic. It should be run only to prepare clean input for the real stages.
+"""
+
 import os
 import pandas as pd
 import json
 
-# This file is specifically to get the cves or functions from an excel or .csv file into a format that can be used as input for stage 1.
-# It is not meant to be a general-purpose file parser, but rather a one-off script to convert the data we have into the format we need for stage 1.
-
-# Configuration
+# ===============================================
+# Global constants and utility functions
+# ===============================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 JSON_INPUT_CATEGORIES = ["type", "scope", "name", "path", "code","description"]
 OUTPUT_FILE = os.path.join(BASE_DIR, "phase1_input.json")
@@ -15,6 +41,18 @@ GREEN = "\033[32m"
 RESET = "\033[0m"
 
 def get_user_input(valid_options: list, prompt: str, max_retries: int = 1, allow_none: bool = False) -> str:
+    """Prompt the user to select one option from a list.
+
+    Args:
+        valid_options: Available selectable options.
+        prompt: Message shown before listing options.
+        max_retries: Maximum number of invalid attempts allowed.
+        allow_none: If True, a "None" option is offered at the end.
+
+    Returns:
+        The selected option string, or None if selection fails/exceeds retries
+        (or if the user chooses "None" when allowed).
+    """
     retries = 0
     while retries < max_retries:
         if retries == 0:
@@ -40,6 +78,15 @@ def get_user_input(valid_options: list, prompt: str, max_retries: int = 1, allow
 
 
 def main():
+    """Run the pre-stage CSV-to-JSON sanitization flow.
+
+    Workflow:
+    1. Discover CSV files in the current stage directory.
+    2. Let the user choose the CSV file (if more than one exists).
+    3. Ask the user to map CSV columns to the canonical JSON categories.
+    4. Generate `phase1_input.json` with normalized records.
+    """
+    
     print("""
     ===============================================
     |                                            |
