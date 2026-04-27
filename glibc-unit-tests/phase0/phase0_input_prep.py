@@ -149,6 +149,8 @@ def main():
             category_to_column_mapping[category] = selected_column
 
         print("\n=====================")
+        print(f"Current category to column mapping: {GREEN}{category_to_column_mapping}{RESET}")
+        print("=====================\n")
 
     # Create a new dataset with the selected columns and save it in json format
     output_data = []
@@ -157,14 +159,14 @@ def main():
         output_row = {}
         for category, column in category_to_column_mapping.items():
             value = row.get(column)
-            if pd.isna(value) or value is None:
+            if pd.isna(value) or value ==  "":
                 empty_cell = True
                 break
             output_row[category] = None if pd.isna(value) else value
 
         if not empty_cell:
             output_data.append(output_row)
-            empty_cell = False
+        empty_cell = False
 
     # Save output in json format
     print(f"\nSaving output to {OUTPUT_FILE}...")
