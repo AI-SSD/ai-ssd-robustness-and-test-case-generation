@@ -15,13 +15,13 @@
     "type": "FUNCTION",
     "name": "open_translit",
     "path": "iconv/gconv_trans.c",
-    "code": NaN
+    "code": null
   },
   {
     "type": "FUNCTION",
     "name": "trans_compare",
     "path": "iconv/gconv_trans.c",
-    "code": NaN
+    "code": null
   },
   {
     "type": "FUNCTION",
@@ -789,7 +789,7 @@
     "type": "FUNCTION",
     "name": "main",
     "path": "posix/bug-regex28.c",
-    "code": NaN
+    "code": null
   },
   {
     "type": "FUNCTION",
@@ -1875,7 +1875,7 @@
     "type": "FUNCTION",
     "name": "__inet_aton",
     "path": "resolv/inet_addr.c",
-    "code": NaN
+    "code": null
   },
   {
     "type": "FUNCTION",
@@ -2283,7 +2283,7 @@
     "type": "FUNCTION",
     "name": "faccessat",
     "path": "sysdeps/unix/sysv/linux/faccessat.c",
-    "code": NaN
+    "code": null
   },
   {
     "type": "FUNCTION",

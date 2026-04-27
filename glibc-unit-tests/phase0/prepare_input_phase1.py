@@ -102,7 +102,8 @@ def main():
     for row in data:
         output_row = {}
         for category, column in category_to_column_mapping.items():
-            output_row[category] = row[column] if column in row else None
+            value = row.get(column)
+            output_row[category] = None if pd.isna(value) else value
         output_data.append(output_row)
 
     # Save output in json format
