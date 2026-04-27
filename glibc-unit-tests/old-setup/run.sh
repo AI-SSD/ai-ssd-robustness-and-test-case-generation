@@ -1,0 +1,236 @@
+#!/bin/bash
+
+# Before running this script, make sure to:
+# - define the type of Ollama host (local or remote) by setting the OLLAMA_HOST environment variable or by providing input when prompted
+# - if using a remote Ollama, set the OLLAMA_URL environment variable or provide it when prompted
+# - to reuse an existing image instead of creating a new one each time, set REUSE_IMAGE=true
+# - to use a different Ollama port do "export OLLAMA_PORT=your_port"
+# - to use a different Ollama model do "export OLLAMA_MODEL=your_model"
+# - to use a different container name do "export CONTAINER_NAME=your_container_name"
+# - to use a different image name do "export IMAGE_NAME=your_image_name"
+
+# Robustness flags
+set -Eeo pipefail
+IFS=$'\n\t'
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'        # no color
+
+echo -e "${GREEN}==================================================${NC}"
+echo -e "${GREEN}     Unit Test Generator for Glibc Functions${NC}"
+echo -e "${GREEN}==================================================${NC}"
+
+# ======================================================
+# Configure environment variables if not set previously
+# ======================================================
+REUSE_IMAGE=${REUSE_IMAGE:-"false"}
+OLLAMA_PORT=${OLLAMA_PORT:-11434}
+OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:3b}
+LOCAL_OLLAMA_URL="http://localhost:${OLLAMA_PORT}"  # used only to test to Ollama connectivity while outside the container
+CONTAINER_NAME=${CONTAINER_NAME:-"glibc-unit-test-generator"}
+IMAGE_NAME=${IMAGE_NAME:-"${CONTAINER_NAME}-image"}
+
+# If OLLAMA_HOST not provided, ask for input
+if [ -z "$OLLAMA_HOST" ]; then
+    read -p ">>> Is Ollama running locally or remotely? (local/remote): " OLLAMA_HOST
+fi
+
+# Ask for Ollama URL if host is remote and URL not provided
+if [ "$OLLAMA_HOST" == "local" ]; then
+    OLLAMA_URL="http://host.docker.internal:${OLLAMA_PORT}"
+elif [ "$OLLAMA_HOST" == "remote" ]; then
+    if [ -z "$OLLAMA_URL" ]; then
+        read -p ">>> Enter the Ollama URL (e.g. http://1.1.1.1:11434): " OLLAMA_URL
+    fi
+else
+    echo -e "${RED}✗ Invalid input for Ollama host.${NC}"
+    exit 1
+fi
+
+
+# ======================================================
+# Functions
+# ======================================================
+
+# Check if ollama is running
+check_ollama() {
+    echo -e "\n${YELLOW}Checking if Ollama is running...${NC}"
+    if [ "$OLLAMA_HOST" == "local" ]; then
+        echo -e "${YELLOW}Checking local Ollama at ${LOCAL_OLLAMA_URL}...${NC}"
+        temp_url="${LOCAL_OLLAMA_URL}"
+    else
+        echo -e "${YELLOW}Checking remote Ollama at ${OLLAMA_URL}...${NC}"
+        temp_url="${OLLAMA_URL}"
+    fi
+
+    if curl -s "${temp_url}/api/tags" > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ Ollama is running on ${temp_url}${NC}"
+        return 0
+    else
+        echo -e "${RED}✗ Ollama is not running${NC}"
+        return 1
+    fi
+}
+
+# Start ollama if not running already
+start_ollama() {
+    if [ "$OLLAMA_HOST" == "remote" ]; then
+        echo -e "${RED}✗ Cannot start Ollama because it's configured as remote.${NC}"
+        echo -e "Please start Ollama on the remote host and ensure it's reachable at ${OLLAMA_URL}"
+        exit 1
+    fi
+
+    echo -e "\n${YELLOW}Starting Ollama...${NC}"
+    if command -v ollama &> /dev/null; then
+        ollama serve > /dev/null 2>&1 & OLLAMA_PID=$!
+        echo -e "${GREEN}✓ Ollama started (PID: ${OLLAMA_PID})${NC}"
+        
+        # Wait for Ollama to be ready
+        echo -n "Waiting for Ollama to be ready"
+        for i in {1..30}; do
+            if curl -s "${LOCAL_OLLAMA_URL}/api/tags" > /dev/null 2>&1; then
+                echo -e "\n${GREEN}✓ Ollama is ready${NC}"
+                return 0
+            fi
+            echo -n "."
+            sleep 1
+        done
+        echo -e "\n${RED}✗ Ollama failed to start${NC}"
+        exit 1
+    else
+        echo -e "${RED}✗ Ollama is not installed. Please install it first.${NC}"
+        exit 1
+    fi
+}
+
+# Check if model is available
+check_model() {
+    echo -e "\n${YELLOW}Checking if model '${OLLAMA_MODEL}' is available...${NC}"
+    if [ "$OLLAMA_HOST" == "local" ]; then
+        temp_url="${LOCAL_OLLAMA_URL}"
+    else
+        temp_url="${OLLAMA_URL}"
+    fi
+
+    if curl "${temp_url}/api/tags" | grep -q "\"name\":\"${OLLAMA_MODEL}\""; then
+        echo -e "${GREEN}✓ Model '${OLLAMA_MODEL}' is available${NC}"
+    else
+        echo -e "${YELLOW}Model '${OLLAMA_MODEL}' not found. Pulling...${NC}"
+        ollama pull "${OLLAMA_MODEL}"
+        echo -e "${GREEN}✓ Model '${OLLAMA_MODEL}' downloaded${NC}"
+    fi
+}
+
+# Check if code directory exists and has files
+check_inputs_directory() {
+    if [ ! -d "./inputs" ]; then
+        echo -e "${RED}✗ ./inputs directory not found${NC}"
+        echo -e "  Please create a ./inputs directory and add the required files (function info JSON, C implementation, etc.)"
+        exit 1
+    fi
+    
+    # Check for json file named metadata.json
+    if [ ! -f "./inputs/metadata.json" ]; then
+        echo -e "${RED}✗ metadata.json file not found in ./inputs directory${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Found metadata.json file in ./inputs directory${NC}"
+
+    # Check for at least one .c file in the inputs directory
+    if ! ls ./inputs/*.c 1> /dev/null 2>&1; then
+        echo -e "${RED}✗ No .c files found in ./inputs directory${NC}"
+        exit 1
+    fi
+    
+    local file_count=$(ls -1 ./inputs/*.c | wc -l)
+    echo -e "${GREEN}✓ Found ${file_count} C file(s) in ./inputs directory${NC}"
+    echo -e "${GREEN}✓ Input directory is properly set up, but did not check structure inside files.${NC}"
+}
+
+# Build Docker image
+build_image() {
+    echo -e "\n${YELLOW}Building Docker image...${NC}"
+    docker build -t "${IMAGE_NAME}" .
+    echo -e "${GREEN}✓ Docker image built${NC}"
+}
+
+# Run the container
+run_container() {
+    echo -e "\n${YELLOW}Running container...${NC}"
+    
+    # Create results directories if they don't exist
+    mkdir -p ./tests
+    mkdir -p ./results
+    
+    # Remove old container if exists
+    docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
+    
+    # Run container and mount volumes to share code and results
+    docker run -it --rm --name "${CONTAINER_NAME}" \
+        -v "$(pwd)/inputs:/app/inputs" \
+        -v "$(pwd)/tests:/app/tests" \
+        -v "$(pwd)/results:/app/results" \
+        -e OLLAMA_URL="${OLLAMA_URL}" \
+        -e OLLAMA_MODEL="${OLLAMA_MODEL}" \
+        -e "GLIBC_VERSION=${GLIBC_VERSION}" \
+        "${IMAGE_NAME}"
+    
+    echo -e "${GREEN}✓ Container execution completed${NC}"
+}
+
+# Display results
+display_results() {
+    echo -e "\n${GREEN}========================================${NC}"
+    echo -e "${GREEN}  Summary of the Results${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    
+    if [ -f "./results/summary.json" ]; then
+        echo -e "\n${YELLOW}Summary:${NC}"
+        cat ./results/summary.json | python3 -m json.tool | head -20
+        
+        echo -e "\n${GREEN}✓ Full results available in ./results/${NC}"
+        echo -e "${GREEN}✓ Generated tests available in ./tests/${NC}"
+    else
+        echo -e "${RED}✗ No results found${NC}"
+    fi
+}
+
+
+# ======================================================
+# Main execution
+# ======================================================
+main() {
+    # Check prerequisites
+    check_inputs_directory
+    
+    # Handle Ollama
+    if ! check_ollama; then
+        if [ "$OLLAMA_HOST" == "local" ]; then
+            start_ollama
+        else
+            echo -e "${RED}✗ Cannot connect to Ollama remotely at ${OLLAMA_URL}${NC}"
+            return 1
+        fi
+    fi
+    check_model
+    
+    # Build and run container
+    if [ "$REUSE_IMAGE" == "true" ]; then
+        echo -e "${YELLOW}Reusing existing Docker image '${IMAGE_NAME}'...${NC}"
+    else
+        build_image
+    fi
+    run_container
+    
+    # Print results
+    #display_results
+    
+    echo -e "\n${GREEN}========================================${NC}"
+    echo -e "${GREEN}  All done!${NC}"
+    echo -e "${GREEN}========================================${NC}"
+}
+
+main
